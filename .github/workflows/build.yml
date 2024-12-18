@@ -28,7 +28,7 @@ jobs:
       - name: package can be built
         run: wasm-pack build # --TODO: fix with --target web
         working-directory: wasmcloud-rs-js
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         name: Install pnpm
         with:
           version: 9
