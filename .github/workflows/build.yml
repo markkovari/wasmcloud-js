@@ -28,9 +28,12 @@ jobs:
       - name: package can be built
         run: wasm-pack build # --TODO: fix with --target web
         working-directory: wasmcloud-rs-js
-      # - run: npm install
-      # - run: npm run lint
-      # - run: npm run build
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 9
+      - run: pnpm install
+      - run: pnpm build
 
       # - name: Is Release?
       #   if: startswith(github.ref, 'refs/tags/v')
