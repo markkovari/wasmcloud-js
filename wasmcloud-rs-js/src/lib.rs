@@ -1,7 +1,8 @@
+use getrandom::getrandom;
 use js_sys::Uint8Array;
 use wasm_bindgen::prelude::*;
 
-use wascap::jwt::{validate_token, Component};
+use wascap::jwt::{validate_token, Actor as Component};
 use wascap::wasm::extract_claims;
 
 use nkeys::KeyPair;
@@ -13,13 +14,22 @@ pub struct HostKey {
     seed: String,
 }
 
+#[no_mangle]
+//TODO: ignore/fix/whatevs
+pub extern "C" fn generate_random_bytes() -> [u8; 32] {
+    let mut bytes = [0u8; 32];
+    getrandom(&mut bytes).expect("Failed to generate random bytes");
+    bytes
+}
+
 // HostKey nkeys implementation
 #[wasm_bindgen]
 impl HostKey {
     #[wasm_bindgen(constructor)]
     // new creates a new nkeys server key pair
     pub fn new() -> HostKey {
-        let key_pair = KeyPair::new_server();
+        let key_pair =
+            KeyPair::new_from_raw(nkeys::KeyPairType::Server, generate_random_bytes()).unwrap();
         let seed = key_pair.seed().unwrap();
         let public_key = key_pair.public_key();
         HostKey { public_key, seed }
