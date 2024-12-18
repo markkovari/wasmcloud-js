@@ -1,15 +1,15 @@
+use js_sys::Uint8Array;
 use wasm_bindgen::prelude::*;
-use js_sys::{Uint8Array};
 
-use wascap::wasm::{extract_claims};
-use wascap::jwt::{validate_token, Actor};
+use wascap::jwt::{validate_token, Component};
+use wascap::wasm::extract_claims;
 
 use nkeys::KeyPair;
 
-// HostKey holds pk and seed for server key
+// HostKey holds public key and seed for server key pair
 #[wasm_bindgen]
 pub struct HostKey {
-    pk: String,
+    public_key: String,
     seed: String,
 }
 
@@ -17,20 +17,18 @@ pub struct HostKey {
 #[wasm_bindgen]
 impl HostKey {
     #[wasm_bindgen(constructor)]
-    // new creates a new nkeys server key
+    // new creates a new nkeys server key pair
     pub fn new() -> HostKey {
-        let kp = KeyPair::new_server();
-        let seed = kp.seed().unwrap();
-        HostKey {
-            pk: kp.public_key(),
-            seed: seed,
-        }
+        let key_pair = KeyPair::new_server();
+        let seed = key_pair.seed().unwrap();
+        let public_key = key_pair.public_key();
+        HostKey { public_key, seed }
     }
 
-    // pk returns the HostKey pk
+    // public key returns the HostKey public key
     #[wasm_bindgen(getter)]
-    pub fn pk(&self) -> String {
-        return String::from(&self.pk);
+    pub fn public_key(&self) -> String {
+        return String::from(&self.public_key);
     }
 
     // seed returns the HostKey seed
@@ -44,21 +42,18 @@ impl HostKey {
 #[wasm_bindgen]
 pub fn extract_jwt(contents: &Uint8Array) -> Result<String, JsValue> {
     let claims = extract_claims(contents.to_vec());
-    let out = match claims {
+    match claims {
         Ok(token) => Ok(String::from(token.unwrap().jwt)),
         Err(err) => Err(JsValue::from_str(&format!("{}", err))),
-    };
-    return out;
+    }
 }
 
 // validate_jwt validates the jwt token
 #[wasm_bindgen]
 pub fn validate_jwt(jwt: &str) -> bool {
-    let validate = validate_token::<Actor>(jwt);
-    let token = validate.unwrap();
-    if token.cannot_use_yet || token.expired {
-        return false;
+    let validate = validate_token::<Component>(jwt);
+    match validate {
+        Ok(validation) if !validation.expired && !validation.cannot_use_yet => true,
+        _ => false,
     }
-    return true;
 }
-
