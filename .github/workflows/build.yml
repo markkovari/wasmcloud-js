@@ -12,28 +12,35 @@ on:
       - main
       - release-*
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@f1f314fca9dfce2769ece7d933488f076716723e # v1.4.6
         with:
-          node-version: 12
-          registry-url: https://registry.npmjs.org/
+          node-version: 22
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - run: npm install
-      # - run: npm run test
-      - run: npm run lint
-      - run: npm run build
+      - name: package can be built
+        run: wasm-pack build # --TODO: fix with --target web
+        working-directory: wasmcloud-rs-js
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        name: Install pnpm
+        with:
+          version: 9
+      - run: pnpm install
+      - run: pnpm build
 
-      - name: Is Release?
-        if: startswith(github.ref, 'refs/tags/v')
-        run: echo "DEPLOY_PACKAGE=true" >> $GITHUB_ENV
+      # - name: Is Release?
+      #   if: startswith(github.ref, 'refs/tags/v')
+      #   run: echo "DEPLOY_PACKAGE=true" >> $GITHUB_ENV
 
-      - name: Publish to npm
-        if: env.DEPLOY_PACKAGE == 'true'
-        run: npm pack && npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Publish to npm
+      #   if: env.DEPLOY_PACKAGE == 'true'
+      #   run: npm pack && npm publish --access public
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
